@@ -1,6 +1,6 @@
 # Zenith Sky Changer
 
-**by ZenithDev** · Rivals (Roblox) · cosmetic only · no key · v7.00
+**by ZenithDev** · Rivals (Roblox) · cosmetic only · no key · v7.01
 
 Change the **sky** of Rivals with your own photo, and **repaint the blocks** of the map. It only changes how the game looks **on your own screen**. Nobody else sees it.
 

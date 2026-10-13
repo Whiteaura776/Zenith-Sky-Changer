@@ -1,6 +1,6 @@
 {
  "name": "Zenith Sky Changer",
- "version": "v7.00",
+ "version": "v7.01",
  "files": [
   {
    "name": "cielo.lua",
@@ -9,8 +9,8 @@
   },
   {
    "name": "cielo_main.lua",
-   "size": 138946,
-   "sha256": "068309fbd5516ea878aa400366e68edbd6a9b33666dfea5b8f2b3cbb4f0438d3"
+   "size": 139474,
+   "sha256": "4edc50f13f4b6116ccaa9c3d230ed12dc88382dcd5c19487d2861902ec833e7f"
   },
   {
    "name": "icono.png",

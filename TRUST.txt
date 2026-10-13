@@ -1,4 +1,4 @@
-Zenith Sky Changer v7.00
-SHA-256 of the exe: ecc7b2a2573fc694bfdf1b76cab0cf90693f95fcf69e3bcb9a198d4f1f89d6c2
+Zenith Sky Changer v7.01
+SHA-256 of the exe: 4d1616bb6e9781e8c4eab1a19fd2cf9f4ba2cb39a228ebcfecd33994ef8b78ea
 PowerShell:  Get-FileHash "<file>" -Algorithm SHA256
 Upload the exe to https://www.virustotal.com and paste the analysis link here.
