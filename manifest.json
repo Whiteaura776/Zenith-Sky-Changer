@@ -1,6 +1,6 @@
 {
  "name": "Zenith Sky Changer",
- "version": "v7.01",
+ "version": "v7.02",
  "files": [
   {
    "name": "cielo.lua",
@@ -8,9 +8,14 @@
    "sha256": "a44b47d503fabadf05ebcc27ecdbc8581149cf610061489b114675f078d5c75b"
   },
   {
+   "name": "cielo_fotos.lua",
+   "size": 98494,
+   "sha256": "1103c4bdbcd6f6e8e979ee3c9a1ef325ff6c035164a113923ed890d26f92b86b"
+  },
+  {
    "name": "cielo_main.lua",
-   "size": 139474,
-   "sha256": "4edc50f13f4b6116ccaa9c3d230ed12dc88382dcd5c19487d2861902ec833e7f"
+   "size": 148371,
+   "sha256": "7f5e62c543587d4224267c8286f7923f332c859297910163cbdb2b3e8344bea0"
   },
   {
    "name": "icono.png",
@@ -19,8 +24,8 @@
   },
   {
    "name": "idiomas.lua",
-   "size": 30491,
-   "sha256": "ea7060d52bc62407295420dcfd082e58fe17b0214623ad8b63c65b36253589e5"
+   "size": 40730,
+   "sha256": "5f2061e376e208b858893fab1539c2c0c94f741229cd8d00c099baef11b7fca4"
   },
   {
    "name": "rueda.png",

@@ -59,12 +59,18 @@ if isfile(CARPETA .. "/version_instalada.txt") then
     if ok and type(v) == "string" then oldVersion = v end
 end
 local pending = {}
+-- readfile cannot check binary files: some executors (Xeno) read them as text and stop at the byte 0x1A, so every image
+-- would look incomplete and be downloaded again on every run. The sizes of what was installed are kept in instalado.txt instead.
+local installed = {}
+do
+    local ok, text = pcall(readfile, CARPETA .. "/instalado.txt")
+    if ok and type(text) == "string" then
+        for name, size in text:gmatch("([^\t\r\n]+)\t(%d+)") do installed[name] = tonumber(size) end
+    end
+end
 -- is the file on disk and complete? (a file inside an assets.pack is checked through the files inside it)
 local function onDisk(name, size)
-    local path = CARPETA .. "/" .. name
-    if not isfile(path) then return false end
-    local ok, content = pcall(readfile, path)
-    return ok and type(content) == "string" and #content == size
+    return isfile(CARPETA .. "/" .. name) and installed[name] == size
 end
 for _, entry in ipairs(manifest.files) do
     local current = false
@@ -107,7 +113,14 @@ if #pending > 0 then
                         else
                             ok = pcall(writefile, CARPETA .. "/" .. entry.name, body)
                         end
-                        if ok then break end
+                        if ok then
+                            if entry.pack then
+                                for _, inner in ipairs(entry.pack) do installed[inner.name] = inner.size end
+                            else
+                                installed[entry.name] = entry.size
+                            end
+                            break
+                        end
                     end
                     task.wait(0.5)
                 end
@@ -118,6 +131,11 @@ if #pending > 0 then
         while running > 0 do task.wait(0.1) end
         i = i + BATCH
     end
+    -- note what was installed (even if some files failed: the next run only repeats those)
+    local lines = {}
+    for name, size in pairs(installed) do lines[#lines + 1] = name .. "\t" .. size end
+    table.sort(lines)
+    pcall(writefile, CARPETA .. "/instalado.txt", table.concat(lines, "\n"))
     if #failed > 0 then
         notify("Zenith Sky Changer", #failed .. " downloads failed (" .. table.concat(failed, ", "):sub(1, 90) .. "). Try again.", 20)
         return
