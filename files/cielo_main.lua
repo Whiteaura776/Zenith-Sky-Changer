@@ -23,7 +23,7 @@
 ]]
 
 -- versión: sube en cada cambio (la lista está en CAMBIOS.txt)
-local VERSION = "v7.00"
+local VERSION = "v7.01"
 
 -- (v6.97) PERFIL: con que forma se arma este script. "completo" = el del usuario (todo); "sky" = ZENITH SKY CHANGER (solo CIELO y COLORES) y "skins" = ZENITH SKIN CHANGER (solo SKINS y
 -- WRAPS), las dos versiones PUBLICAS: tienen su propia carpeta, su ventana y su tecla, asi se pueden tener las dos a la vez. herramientas/publicar.py cambia la linea de abajo y, ademas,
@@ -772,9 +772,7 @@ end
 local mouseDelJuego = nil -- { comportamiento, icono } de antes de soltarlo
 
 local function primeraPersona()
-    if jugador.CameraMode == Enum.CameraMode.LockFirstPerson or jugador.CameraMaxZoomDistance <= 1 then
-        return true
-    end
+    -- (v7.01) solo cuenta la camara pegada a la cabeza: CameraMode / CameraMaxZoomDistance tambien valen en el lobby de Rivals
     local camara = workspace.CurrentCamera
     local personaje = jugador.Character
     if not (camara and personaje) then return false end
@@ -804,12 +802,16 @@ local function mouseLibre(libre)
         local comportamiento, icono = mouseDelJuego[1], mouseDelJuego[2]
         mouseDelJuego = nil
 
-        -- suelto pero invisible, o en primera persona = el juego lo quería trabado
+        -- (v7.01) solo se devuelve LockCenter (primera persona) o Default. LockCurrentPosition es el
+        -- de "mantener clic derecho para girar": si se guardaba y se devolvia, el mouse quedaba trabado
+        -- girando la camara sin clic. El juego lo vuelve a poner solo cuando aprietas el clic derecho.
+        -- Trabado = el juego lo tenia en LockCenter, o el cursor invisible, o la camara pegada a la cabeza
         -- (aunque haya quedado suelto por culpa de otra cosa)
-        local trabar = comportamiento ~= Enum.MouseBehavior.Default or icono == false or primeraPersona()
-        if trabar and comportamiento == Enum.MouseBehavior.Default then
-            comportamiento = Enum.MouseBehavior.LockCenter
-        end
+        local cerca = primeraPersona()
+        local trabar = comportamiento == Enum.MouseBehavior.LockCenter or icono == false or cerca
+        pcall(escribir, ruta("raton_log.txt"), string.format("antes=%s icono=%s camaraCerca=%s -> %s",
+            tostring(comportamiento), tostring(icono), tostring(cerca), trabar and "LockCenter" or "Default"))
+        comportamiento = trabar and Enum.MouseBehavior.LockCenter or Enum.MouseBehavior.Default
         UserInputService.MouseBehavior = comportamiento
         UserInputService.MouseIconEnabled = icono
 
