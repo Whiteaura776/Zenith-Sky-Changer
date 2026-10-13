@@ -23,7 +23,7 @@
 ]]
 
 -- versión: sube en cada cambio (la lista está en CAMBIOS.txt)
-local VERSION = "v7.01"
+local VERSION = "v7.02"
 
 -- (v6.97) PERFIL: con que forma se arma este script. "completo" = el del usuario (todo); "sky" = ZENITH SKY CHANGER (solo CIELO y COLORES) y "skins" = ZENITH SKIN CHANGER (solo SKINS y
 -- WRAPS), las dos versiones PUBLICAS: tienen su propia carpeta, su ventana y su tecla, asi se pueden tener las dos a la vez. herramientas/publicar.py cambia la linea de abajo y, ademas,
@@ -2050,7 +2050,7 @@ local moduloCielo = (function()
     crear("TextLabel", {
         AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 18),
         Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = C.tenue,
-        Text = "Agrega fotos con la app Cielo Roblox del PC (arrastrar o abrir)  ·  F8 prende/apaga el cielo",
+        Text = "Toca «Agregar foto» o usa la app del PC (arrastrar o abrir)  ·  F8 prende/apaga el cielo",
         TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
         BackgroundTransparency = 1, Parent = paginaCielo,
     })
@@ -2108,13 +2108,173 @@ local moduloCielo = (function()
         tarjetas = {}
         nuevaTarjeta("", 0)
         for i, id in ipairs(lista) do
-            nuevaTarjeta(id, i)
+            nuevaTarjeta(id, i + 1) -- (v7.02) el 1 es la tarjeta "Agregar foto"
         end
         tituloGaleria.Text = #lista > 0
             and ("TUS FOTOS  (" .. #lista .. ")")
             or "TUS FOTOS  (todavía ninguna)"
         marcarTarjetas()
     end
+
+    -- ------------------------------------------------------------------------------------------
+    -- (v7.02) AGREGAR UNA FOTO desde dentro del juego: cielo_fotos.lua hace lo mismo que la app del PC
+    -- (recorta cuadrado, funde arriba y abajo, espejo, miniatura, colores). La foto se copia a <carpeta>/fotos.
+    local okFotos, falloFotos = pcall(function()
+    local importando = false
+    local fotosMod = nil
+    local rellenarFotos
+
+    local function cargarFotos()
+        if fotosMod then return fotosMod end
+        local codigo = leer(ruta("cielo_fotos.lua"))
+        if not codigo then return nil, "Falta el archivo cielo_fotos.lua: vuelve a ejecutar el cargador." end
+        local f, fallo = loadstring(codigo, "=cielo_fotos")
+        if not f then return nil, "cielo_fotos.lua no compila: " .. tostring(fallo) end
+        local ok, mod = pcall(function()
+            return f()({
+                carpeta = CARPETA, writefile = writefile, readfile = readfile, isfolder = isfolder, makefolder = makefolder,
+                getcustomasset = cargarAsset, AssetService = game:GetService("AssetService"), Content = Content, Vector2 = Vector2,
+                ceder = task.wait,
+            })
+        end)
+        if not ok then return nil, "No pude iniciar cielo_fotos.lua: " .. tostring(mod) end
+        fotosMod = mod
+        return mod
+    end
+
+    local panelFoto = crear("Frame", {
+        Name = "PanelFoto", Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.fondo, BorderSizePixel = 0,
+        Visible = false, ZIndex = 30, Parent = paginaCielo,
+    }, { esquina(12), trazo(C.acento, 1.5, 0.4) })
+    local function textoPanel(props)
+        props.BackgroundTransparency = 1
+        props.ZIndex = 31
+        props.Parent = panelFoto
+        props.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Left
+        props.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Top
+        return crear("TextLabel", props)
+    end
+    textoPanel({ Position = UDim2.fromOffset(14, 10), Size = UDim2.new(1, -28, 0, 20), Text = "AGREGAR UNA FOTO",
+        Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = C.acento })
+    textoPanel({ Position = UDim2.fromOffset(14, 36), Size = UDim2.new(1, -28, 0, 70), TextWrapped = true,
+        Text = "Copia tu foto PNG a esta carpeta, dentro de la carpeta workspace de tu executor, y toca «Actualizar lista». Después toca tu foto para armar el cielo (tarda unos segundos). Si es JPG, guárdala antes como PNG (en Paint: Archivo > Guardar como > PNG).",
+        Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = C.texto })
+    textoPanel({ Position = UDim2.fromOffset(14, 108), Size = UDim2.new(1, -28, 0, 20),
+        Text = ruta("fotos"), Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = C.durazno })
+
+    local listaFotos = crear("ScrollingFrame", {
+        Position = UDim2.fromOffset(14, 134), Size = UDim2.new(1, -28, 1, -230), BackgroundColor3 = C.panel, BorderSizePixel = 0,
+        ScrollBarThickness = 5, ScrollBarImageColor3 = C.acento, ScrollingDirection = Enum.ScrollingDirection.Y,
+        CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 31, Parent = panelFoto,
+    }, {
+        esquina(10),
+        crear("UIPadding", { PaddingTop = UDim.new(0, 6), PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6) }),
+        crear("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+    })
+    local estadoFoto = textoPanel({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -76), Size = UDim2.new(1, -28, 0, 18),
+        Text = "", Font = Enum.Font.GothamMedium, TextSize = 13, TextColor3 = C.tenue })
+    local fondoBarra = crear("Frame", {
+        AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -58), Size = UDim2.new(1, -28, 0, 8),
+        BackgroundColor3 = C.panel2, BorderSizePixel = 0, ZIndex = 31, Parent = panelFoto,
+    }, { esquina(4) })
+    local barraFoto = crear("Frame", {
+        Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.acento, BorderSizePixel = 0, ZIndex = 32, Parent = fondoBarra,
+    }, { esquina(4) })
+
+    local function ponerEstado(texto, fraccion, esError)
+        if not vivo then return end
+        estadoFoto.Text = texto
+        estadoFoto.TextColor3 = esError and Color3.fromRGB(255, 138, 160) or C.tenue
+        if fraccion then barraFoto.Size = UDim2.fromScale(math.clamp(fraccion, 0, 1), 1) end
+    end
+
+    local function importarFoto(rutaFoto)
+        if importando then return end
+        local fotos, motivo = cargarFotos()
+        if not fotos then
+            ponerEstado(motivo, 0, true)
+            return
+        end
+        importando = true
+        ponerEstado("Empezando...", 0.01)
+        task.spawn(function()
+            local ok, resultado = fotos.importar(rutaFoto, function(texto, fraccion) ponerEstado(texto, fraccion) end)
+            importando = false
+            if not vivo then return end
+            if ok then
+                elegir(resultado)
+                ponerEstado("Listo: tu cielo ya está puesto.", 1)
+                aviso("Tu foto ya es el cielo. Está en TUS FOTOS.")
+                task.delay(1.2, function() if vivo and not importando then panelFoto.Visible = false end end)
+            else
+                ponerEstado(tostring(resultado), 0, true)
+            end
+        end)
+    end
+
+    rellenarFotos = function()
+        for _, h in ipairs(listaFotos:GetChildren()) do
+            if h:IsA("TextButton") or h:IsA("TextLabel") then h:Destroy() end
+        end
+        pcall(makefolder, ruta("fotos"))
+        local ok, rutas = pcall(listfiles, ruta("fotos"))
+        local n = 0
+        if ok and type(rutas) == "table" then
+            table.sort(rutas)
+            for _, r in ipairs(rutas) do
+                local limpio = (tostring(r):gsub("\\", "/"))
+                local nombreArchivo = limpio:match("([^/]+)$")
+                local ext = nombreArchivo and nombreArchivo:lower():match("%.(%w+)$")
+                if ext == "png" or ext == "jpg" or ext == "jpeg" then
+                    n = n + 1
+                    local b = crear("TextButton", {
+                        LayoutOrder = n, Size = UDim2.new(1, 0, 0, 34), Text = "  " .. nombreArchivo, Font = Enum.Font.GothamMedium,
+                        TextSize = 13, TextColor3 = C.texto, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+                        BackgroundColor3 = C.panel2, AutoButtonColor = true, ZIndex = 32, Parent = listaFotos,
+                    }, { esquina(8) })
+                    crear("TextLabel", {
+                        AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.fromOffset(70, 18),
+                        Text = "Agregar", Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = C.acento,
+                        TextXAlignment = Enum.TextXAlignment.Right, BackgroundTransparency = 1, ZIndex = 33, Parent = b,
+                    })
+                    b.MouseButton1Click:Connect(function() importarFoto(limpio) end)
+                end
+            end
+        end
+        if n == 0 then
+            crear("TextLabel", {
+                LayoutOrder = 1, Size = UDim2.new(1, 0, 0, 40), TextWrapped = true, Text = "Todavía no hay fotos en esa carpeta.",
+                Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = C.tenue, BackgroundTransparency = 1, ZIndex = 32, Parent = listaFotos,
+            })
+        end
+    end
+
+    local function botonPanel(texto, x, ancho)
+        return crear("TextButton", {
+            AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, x, 1, -14), Size = UDim2.fromOffset(ancho, 34), Text = texto,
+            Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = C.oscuro, BackgroundColor3 = C.acento, AutoButtonColor = true,
+            ZIndex = 32, Parent = panelFoto,
+        }, { esquina(9) })
+    end
+    botonPanel("Actualizar lista", 14, 150).MouseButton1Click:Connect(function()
+        ponerEstado("", 0)
+        rellenarFotos()
+    end)
+    botonPanel("Cerrar", 174, 100).MouseButton1Click:Connect(function()
+        if not importando then panelFoto.Visible = false end
+    end)
+
+    local tarjetaAgregar = crear("TextButton", {
+        Name = "AgregarFoto", LayoutOrder = 1, BackgroundColor3 = C.panel, BorderSizePixel = 0, AutoButtonColor = true,
+        Text = "＋\nAgregar foto", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = C.acento, Parent = galeria,
+    }, { esquina(10), trazo(C.acento, 1.5, 0.4) })
+    tarjetaAgregar.MouseButton1Click:Connect(function()
+        ponerEstado("", 0)
+        rellenarFotos()
+        panelFoto.Visible = true
+    end)
+    end)
+    if not okFotos then warn("[Cielo] no se pudo armar el boton de agregar fotos: " .. tostring(falloFotos)) end
 
     -- opciones (botones que se prenden y apagan)
     local chips = {}
