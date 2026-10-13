@@ -1,0 +1,31 @@
+{
+ "nombre": "Zenith Sky Changer",
+ "version": "v7.00",
+ "archivos": [
+  {
+   "n": "cielo.lua",
+   "tam": 1067,
+   "sha256": "907112c0e7eb10cbb67b920086a97fce9f1055a71b83c497e55ad7c64e6c1967"
+  },
+  {
+   "n": "cielo_main.lua",
+   "tam": 138946,
+   "sha256": "068309fbd5516ea878aa400366e68edbd6a9b33666dfea5b8f2b3cbb4f0438d3"
+  },
+  {
+   "n": "icono.png",
+   "tam": 43629,
+   "sha256": "8c64d12b60bcfdc206590f8b3426efc63db1f721b86677aa3323234f3e7aec56"
+  },
+  {
+   "n": "idiomas.lua",
+   "tam": 30487,
+   "sha256": "05b3193e845db73f89cc6b9cd9c5703e5c43a01b82f31e4931b38df332ee4cfd"
+  },
+  {
+   "n": "rueda.png",
+   "tam": 74224,
+   "sha256": "2d7e0abd7628f39983c498bae3f3dfc1a0ef477fa4fed19522d083a5a1ca6c8d"
+  }
+ ]
+}
